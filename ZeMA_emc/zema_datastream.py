@@ -1,391 +1,114 @@
+import sys
+
+import h5py
 import numpy as np
 import pandas as pd
+import requests
 
-import matplotlib.pyplot as plt
-from scipy.stats import pearsonr
+from DataStreamMET4FOF import DataStreamMET4FOF
+import os
 
 
-class FFT_BFC():
-    def __init__(self, perc_feat=10):
-        """
-        Parameters
-        ----------
-        perc_feat : int
-            Percentage of features to be extracted.
+class ZEMA_DataStream(DataStreamMET4FOF):
+    url = ""
+    path = ""
 
-            Optimal and recommended percentage of features for ZEMA EMC dataset is 10
-        """
+    def get_filename(self):
+        return os.path.join(self.path, self.url.split('/')[-1])
 
-        self.fitted = False;
-        self.perc_feat = perc_feat
-        self.freq_of_sorted_values = []
+    def do_download(self):
+        if not os.path.exists(self.path):
+            os.makedirs(self.path)
+        with open(self.get_filename(), "wb") as f:
+            response = requests.get(self.url, stream=True)
+            total_length = response.headers.get('content-length')
 
-    def fit(self, x_data, perc_feat=None):
-        # if perc_feat is not provided explicitly, use the internal perc_feat
-        # provided during init
-        # otherwise, update the internal perc_feat to the provided one
-        if perc_feat is not None:
-            self.perc_feat = perc_feat
+            if total_length is None:  # no content length header
+                f.write(response.content)
+            else:
+                dl = 0
+                total_length = int(total_length)
+                for data in response.iter_content(chunk_size=4096):
+                    dl += len(data)
+                    f.write(data)
+                    done = int(50 * dl / total_length)
+                    sys.stdout.write(
+                        "\r[%s%s]" % ('=' * done, ' ' * (50 - done)))
+                    sys.stdout.flush()
 
-        # get top N% frequencies AND amplitudes N=10
-        n_sensors = x_data.shape[2]
-        self.n_sensors = n_sensors
-        n_of_samples = x_data.shape[1]
+    def __init__(self):
 
-        # Initialising the list with number of sensors
-        self.freq_of_sorted_values = [0] * n_sensors
+        self.url = "https://zenodo.org/record/1326278/files/Sensor_data_2kHz.h5"
+        self.path = os.path.join("develop", "dataset")
 
-        for i in range(n_sensors):
-            # print("Sensor number %s" % i)
-            # print("---------------------------------------------------------------------------------")
-            # frequency and amplitudes
-            self.freq_of_sorted_values[i], __ = self.extractBFC_train(
-                sensor=x_data[:, :, i], n_of_samples=n_of_samples, N=self.perc_feat)
-        return self
+        # Check if the file is existing already, if not download the file.
 
-    def fit_transform(self, x_data, perc_feat=None):
-        """
-        Gets the best `perc_feat`% of features from an array with dimensions (n_of_cycles, length_cycle, n_sensors)
-
-        Parameters
-        ----------
-
-        x_data : np.ndarray
-            Sensor measurements array with dimensions (n_of_cycles, length_cycle, n_sensors)
-
-        Returns
-        -------
-
-        sorted_values : list of DataFrames
-            len(sorted_values) == n_sensors
-            DataFrame.shape == (n_of_cycles, perc_feat% * length_cycle/2)
-
-        """
-
-        # if perc_feat is not provided explicitly, use the internal perc_feat
-        # provided during init
-        # otherwise, update the internal perc_feat to the provided one
-        if perc_feat is not None:
-            self.perc_feat = perc_feat
-
-        n_sensors = x_data.shape[2]
-        self.n_sensors = n_sensors
-        n_of_samples = x_data.shape[1]
-
-        # Initialising the list with number of sensors
-        self.freq_of_sorted_values = [0 for i in range(n_sensors)]
-        sorted_values_from_all_sensors = [0 for i in range(n_sensors)]
-
-        for i in range(n_sensors):
-            # print("Sensor number %s" % i)
-            # print("---------------------------------------------------------------------------------")
-            # frequency and amplitudes
-            self.freq_of_sorted_values[i], sorted_values_from_all_sensors[
-                i] = self.extractBFC_train(sensor=x_data[:, :, i],
-                                           n_of_samples=n_of_samples, N=self.perc_feat)
-        return sorted_values_from_all_sensors
-
-    def transform(self, x_data):
-        """
-        Based on the fitted values stored in get_best_frequencies(), gets the best `perc_feat`% of features from an array with dimensions (n_of_cycles, length_cycle, n_sensors)
-
-        Parameters
-        ----------
-
-        x_data : np.ndarray
-            Sensor measurements array with dimensions (n_of_cycles, length_cycle, n_sensors)
-
-        Returns
-        -------
-
-        sorted_values : list of DataFrames
-            len(sorted_values) == n_sensors
-            DataFrame.shape == (n_of_cycles, perc_feat% * length_cycle/2)
-
-        """
-
-        # Storing selected features from the test data into a list "sorted_values_test"
-        n_sensors = x_data.shape[2]
-        n_of_samples = x_data.shape[1]
-
-        sorted_values_test = [0] * n_sensors
-
-        for i in range(n_sensors):
-            # print("Sensor number %s" % i)
-            # print("---------------------------------------------------------------------------------")
-            sorted_values_test[i] = self.extractBFC_test(sensor_test=x_data[:, :, i],
-                                                         n_of_samples=n_of_samples,
-                                                         N=self.perc_feat, frequencies=
-                                                         self.get_best_frequencies()[i])
-        return sorted_values_test
-
-    def get_best_frequencies(self, concise=False):
-        """
-        Best frequencies extracted & sorted with decreasing importance via BFC. Only available after fitting to data.
-
-        Parameters
-        ----------
-        concise : boolean (Default = False)
-            Returns a ndarray version of the best frequencies if True
-
-        Returns
-        -------
-
-        freq_of_sorted_values : list of DataFrames
-            List with length of n_sensors, and each data frame is dimension of 1 x n_features
-            n_features is determined by percentage of features to be obtained during initialization of params (perc_feat).
-
-        """
-
-        if concise == True:
-            best_f = self.freq_of_sorted_values
-            best_f_np = best_f[0].values
-            if len(best_f) > 1:
-                for n in range(1, len(best_f)):
-                    best_f_np = np.concatenate((best_f_np, best_f[n].values))
-            return best_f_np
-
+        if os.path.isfile(self.get_filename()):
+            print("Data already exist.\n")
         else:
-            return self.freq_of_sorted_values
+            print("Download data...")
+            self.do_download()
+            print("Download finished.\n")
 
-    def extractBFC_train(self, sensor, n_of_samples, N):
-        sensor = sensor.transpose((1, 0))
-        x_measurements = range(
-            sensor.shape[0])  # Number of measurements samples in time period.
-        x = np.true_divide(x_measurements,
-                           n_of_samples)  # Time values, used  as real time axis.
-        freq = np.fft.rfftfreq(x.size,
-                               0.0005)  # Frequency axis, can be used for ploting in frequency domain.
-        fft_amplitudes = np.fft.rfft(sensor, n_of_samples,
-                                     0)  # Ndarray of amplitudes after fourier transform.
-        fft_matrix = pd.DataFrame(
-            fft_amplitudes)  # Transforming amplitudes into data frame (matrix)-
-        # -where one column represents amplitudes of one-
-        # -cycle.
-        fft_matrix = fft_matrix.transpose()  # Transposing to matrix where rows are cycles.
-        n_rows, n_columns = np.shape(fft_matrix)
+        f = h5py.File(self.get_filename(), 'r')
 
-        # print("\nNumber of cycles is: %s, and number of features is: %s" % (n_rows, n_columns))
-        fft_matrix.columns = freq  # Column labels are frequencies.
+        # Order of sensors in the picture is different from the order in
+        # imported data, which will be followed.
+        self.offset = [0, 0, 0, 0, 0.00488591, 0.00488591, 0.00488591,
+                       0.00488591, 1.36e-2, 1.5e-2, 1.09e-2]
+        self.gain = [5.36e-9, 5.36e-9, 5.36e-9, 5.36e-9, 3.29e-4, 3.29e-4,
+                     3.29e-4, 3.29e-4, 8.76e-5, 8.68e-5, 8.65e-5]
+        self.b = [1, 1, 1, 1, 1, 1, 1, 1, 5.299641744, 5.299641744, 5.299641744]
+        self.k = [250, 1, 10, 10, 1.25, 1, 30, 0.5, 2, 2, 2]
+        self.units = ['[Pa]', '[g]', '[g]', '[g]', '[kN]', '[bar]', '[mm/s]',
+                      '[A]', '[A]', '[A]', '[A]']
+        self.labels = ['Microphone', 'Vibration plain bearing',
+                       'Vibration piston rod', 'Vibration ball bearing',
+                       'Axial force', 'Pressure', 'Velocity', 'Active current',
+                       'Motor current phase 1', 'Motor current phase 2',
+                       'Motor current phase 3']
 
-        # Calculating the average of absolute vales for each frequency (column).
-        absolute_average_values_from_columns = (np.abs(fft_matrix)).mean()
+        # prepare sensor data
+        list(f.keys())
+        data= f['Sensor_Data']
+        data= data[:,:,:data.shape[2]-1] #drop last cycle
+        data_inputs_np = np.zeros([data.shape[2],data.shape[1],data.shape[0]])
+        for i in range(data.shape[0]):
+            sensor_dt = data[i].transpose()
+            data_inputs_np[:,:,i] = sensor_dt
 
-        # Sorting the fft_matrix by the average of absolute vales for each frequency (column).
-        fft_matrix = fft_matrix.reindex(
-            (np.abs(fft_matrix)).mean().sort_values(ascending=False).index, axis=1)
+        #prepare target var
+        target=list(np.zeros(data_inputs_np.shape[0]))          # Making the target list which takes into account number of cycles, which-
+        for i in range(data_inputs_np.shape[0]):                # goes from 0 to 100, and has number of elements same as number of cycles.
+            target[i]=(i/(data_inputs_np.shape[0]-1))*100
 
-        # Taking first N percent columns from sorted fft_matrix.
-        sorted_values_matrix = fft_matrix.iloc[:, :round((N / 100.0) * len(freq))]
+        target_matrix = pd.DataFrame(target)        # Transforming list "target" into data frame "target matrix"
+        data_inputs_np = self.convert_SI(data_inputs_np)
+        self.set_data_source(x=data_inputs_np, y=target_matrix)
 
-        n_rows, n_columns = np.shape(sorted_values_matrix)
-        # print("\nNumber of cycles is: %s, and number of selected features is: %s" % (n_rows, n_columns))
-        # print(np.shape(sorted_values_matrix))
-
-        # Informations about the selected frequencies are columns in sorted data frame.
-        freq_of_sorted_values = (pd.DataFrame(sorted_values_matrix.columns)).transpose()
-        # print("\nFirst 10 selected frequencies are:\n\n %s" % freq_of_sorted_values.values[:,:10])
-
-        sorted_values_matrix.columns = range(
-            round((N / 100.0) * len(freq)))  # Resetting the column labels.
-        # print("---------------------------------------------------------------------------------\n")
-        # Output "sorted_values_matrix" is data frame whose rows-
-        # -are cycles and columns are selected frequencies. For example,-
-        # -value at position (i,j) is amplitude for frequency j in cycle i.
-
-        return freq_of_sorted_values, sorted_values_matrix;
-
-    def extractBFC_test(self, sensor_test, frequencies, n_of_samples, N):
-        sensor_test = sensor_test.transpose((1, 0))
-        x_measurements = range(
-            sensor_test.shape[0])  # Number of measurements in time period.
-        x = np.true_divide(x_measurements, n_of_samples)  # Time values, real time axis.
-        freq = np.fft.rfftfreq(x.size, 0.0005)
-        fft_amplitudes = np.fft.rfft(sensor_test, n_of_samples, 0)
-        fft_matrix = pd.DataFrame(fft_amplitudes)
-
-        fft_matrix = fft_matrix.transpose()  # Transposing to matrix where rows are cycles.
-
-        n_rows, n_columns = np.shape(fft_matrix)
-
-        # print("\nNumber of cycles is: %s, and number of features is: %s \n" % (n_rows, n_columns))
-        fft_matrix.columns = freq  # Column labels are frequencies.
-
-        # print("Frequencies are the same as in the traning data, of course. \nFirst 10 of them:\n\n %s" % frequencies.values[:,:10])
-
-        sorted_values_matrix_test = fft_matrix.loc[:, frequencies.loc[0, :]]
-
-        n_rows, n_columns = np.shape(sorted_values_matrix_test)
-        # print("\nNumber of cycles is: %s, and number of selected features is: %s \n\n" % (n_rows, n_columns))
-
-        sorted_values_matrix_test.columns = range(
-            len(sorted_values_matrix_test.columns))
-
-        return sorted_values_matrix_test;
-
-    def plot_feature_percentages(self, sensor_percentage, labels=None, figsize=(8, 8)):
-        """
-        Plot pie chart which shows the percentages of features from each sensor
-
-        """
-        fig1, ax1 = plt.subplots(figsize=figsize)
-        ax1.set_title("Percentages of features from each sensor")
-        ax1.pie(sensor_percentage, labels=labels, autopct='%1.1f%%', shadow=True,
-                startangle=90, )
-        ax1.axis('equal')
-
-        return fig1
-
-    def plot_bestFreq(self):
-        # plot best frequencies
-        best_freq = self.get_best_frequencies(concise=True)
-
-        x = []
-        y = []
-        c = []
-
-        for n_sensor in range(best_freq.shape[0]):
-            new_x = [n_sensor for n in range(best_freq.shape[1])]
-            new_y = list(best_freq[n_sensor, :])
-            new_c = list(range(best_freq.shape[1]))
-            x += new_x
-            y += new_y
-            c += new_c
-
-        fig = plt.figure(figsize=(8, 8))
-        plt.scatter(x, y, c=c, cmap="viridis")
-        plt.title("Best frequencies for each sensor")
-        plt.xlabel('N-th Sensor')
-        plt.ylabel('Frequency')
-        cbar = plt.colorbar()
-        cbar.ax.invert_yaxis()
-        cbar.set_label('Rank', rotation=270)
-        # plt.show()
-        return fig
+    def convert_SI(self, sensor_ADC):
+        sensor_SI = sensor_ADC
+        for i in range(sensor_ADC.shape[2]):
+            sensor_SI[:,:,i]=((sensor_ADC[:,:,i]*self.gain[i])+self.offset[i])*self.b[i]*self.k[i]
+        return sensor_SI
 
 
-class Pearson_FeatureSelection():
-    def __init__(self, n_of_features=500):
-        self.sensor_indices = []
-        self.feature_indices = []
+"""
+Examples
+--------
+if __name__ == '__main__':
+    #start agent network server
+    agentNetwork = AgentNetwork()
 
-        # Defining how much of features with biggest Pearson correllation coeff. will be selected.
-        # "How many features out of %s you want to select (recommended is 500): " % n_features_for_select)
-        self.n_of_features = n_of_features
+    #init agents by adding into the agent network
+    gen_agent = agentNetwork.add_agent(agentType=ZEMA_DataStreamAgent)
+    dummy_agent = agentNetwork.add_agent(agentType=AgentMET4FOF)
 
-    def fit(self, x_data, y_data):
-        sorted_values_from_all_sensors = x_data
-        n_sensors = len(sorted_values_from_all_sensors)
-        n_input_features = sorted_values_from_all_sensors[0].shape[1]  # 100
+    #connect agents by either way:
+    agentNetwork.bind_agents(gen_agent, dummy_agent)
 
-        n_features_for_select = 0
-        for i in range(len(sorted_values_from_all_sensors)):
-            n_features_for_select = n_features_for_select + int(
-                len(sorted_values_from_all_sensors[i].iloc[0][:]))
 
-        target_matrix = y_data
-
-        # print("\nDimension of target matrix is:")
-        # print("                                                 ", target_matrix.shape)
-        # print("Dimension of amplitude matrix for one sensor is:")
-        # print("                                                 ", sorted_values_from_all_sensors[0].iloc[:][:].shape)
-
-        corr = list(range(n_sensors))  # Making list for correlation coefficients.
-        p_value = list(range(n_sensors))
-
-        for j in range(n_sensors):  # Making sublists in "corr" for each sensor.
-            corr[j] = list(range(n_input_features))
-            p_value[j] = list(range(n_input_features))
-
-        # Calculating correlation coefficients for each column of each sensor with respect to target.
-        for j in range(n_sensors):
-            for i in range(n_input_features):
-                corr[j][i], p_value[j][i] = pearsonr(
-                    np.abs(sorted_values_from_all_sensors[j].iloc[:][i]),
-                    target_matrix[0])
-        # matrix_corr_coeff = np.transpose(pd.DataFrame(corr))# Transforming list of
-        # correlation coefficients to data frame.
-        corr_array = np.array(
-            corr)  # Transforming list of correlation coefficients to nparray
-
-        # print("Array of correlation coefficients has size:")
-        # print("                                                 ",corr_array.shape)
-
-        def largest_indices(array,
-                            n):  # Function that find indices for 500 biggest Pearson-
-            """Returns the n largest indices from a numpy array."""  # -correlation coefficients.
-            flat = array.flatten()
-            indices = np.argpartition(flat, -n)[-n:]
-            indices = indices[np.argsort(-flat[indices])]
-            return np.unravel_index(indices, array.shape)
-
-        # sensor_indices is the index of the sensor number.
-        # feature_indices is the index of the feature number for each sensor number.
-        sensor_indices, feature_indices = largest_indices(corr_array,
-                                                          self.n_of_features)
-
-        # print("Sensor indices of location of features in >sorted_values_from_all_sensors< matrix: \n")
-        # print(sensor_indices)
-        # print("\nColumn indices of location of features in >sorted_values_from_all_sensors< matrix: \n")
-        # print(feature_indices)
-        self.sensor_indices = sensor_indices
-        self.feature_indices = feature_indices
-        return self
-
-    def fit_transform(self, x_data, y_data):
-        self.fit(x_data, y_data)
-        abs_top_n_together_matrix, percentage = self.transform(x_data)
-        return abs_top_n_together_matrix, percentage
-
-    def transform(self, x_data):
-        # Initialising a list of best features. 11 sublists containing features from each sensor, respectively.
-        sorted_values_from_all_sensors = x_data
-        n_sensors = len(sorted_values_from_all_sensors)
-        top_n_features = [[] for n in range(n_sensors)]
-        # NOTE: top_n_features =[[]]*int(n_sensors) doesn't work !!!
-
-        sensor_n = self.sensor_indices
-        for i in range(n_sensors):
-            for j in range(len(self.sensor_indices)):
-                if self.sensor_indices[j] == i:
-                    top_n_features[i].append(sorted_values_from_all_sensors[i].iloc[:][
-                                                 self.feature_indices[j]]);
-
-        for i in range(n_sensors):
-            for j in range(len(top_n_features[i])):
-                top_n_features[i][j] = list(top_n_features[i][j])
-
-        # Merging sublists into one list with all elements.
-        top_n_together = [j for i in top_n_features for j in i]
-
-        top_n_together_matrix = np.transpose(pd.DataFrame(top_n_together))
-        # print(type(top_n_together_matrix), "\n")
-
-        # Continue working with abosulte values.
-        abs_top_n_together_matrix = np.abs(top_n_together_matrix)
-
-        percentage = list(range(n_sensors))
-        k = 0
-        for i in range(n_sensors):
-            # print(top_n_features_matrix.shape)
-            # print("Number of features from sensor %2.0f is: %3.0f or  %4.2f %%" % (i, len(top_n_features[i]), len(top_n_features[i])/len(sensor_n)*100))
-            percentage[i] = len(top_n_features[i])
-            k = k + len(top_n_features[i]) / len(self.sensor_indices) * 100
-        # print("----------------------------------------------------")
-        # print("                                             %4.2f" % (k))
-
-        return abs_top_n_together_matrix, percentage
-
-    def plot_feature_percentages(self, sensor_percentage, labels=None, figsize=(8, 8)):
-        """
-        Plot pie chart which shows the percentages of features from each sensor
-
-        """
-        fig1, ax1 = plt.subplots(figsize=figsize)
-        ax1.set_title("Percentages of features from each sensor")
-        ax1.pie(sensor_percentage, labels=labels, autopct='%1.1f%%', shadow=True,
-                startangle=90, )
-        ax1.axis('equal')
-
-        return fig1
-
+    gen_agent.init_agent_loop(5)
+    # # set all agents states to "Running"
+    agentNetwork.set_running_state()
+"""
