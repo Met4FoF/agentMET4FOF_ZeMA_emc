@@ -1,4 +1,4 @@
-from AgentMET4FOF import AgentMET4FOF
+from agentMet4FoF.agents import AgentMET4FOF
 from examples.ZEMA_EMC.zema_feature_extract import FFT_BFC, Pearson_FeatureSelection
 
 import numpy as np
@@ -166,7 +166,7 @@ class Regression_Agent(AgentMET4FOF):
             self.log_info("Overall Train Score: " + str(self.lin_model.score(x, y_true)))
         elif message['channel'] == 'test':
             y_true = message['data']['y'][0]
-            y_pred = self.lin_model.predict(message['data']['x'])
+            y_pred = self.lin_model.predict(message['data']['x']).clip(0, 100)
             self.send_output({'y_pred': y_pred, 'y_true': np.array(y_true)})
             self.log_info("Overall Test Score: " + str(self.lin_model.score(message['data']['x'], y_true)))
             self.reg_test_score = self.lin_model.score(message['data']['x'], y_true)
