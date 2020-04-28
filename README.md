@@ -29,7 +29,7 @@ To install all dependencies in virtual environment based on Python version 3.8 f
 install `pip-tools` and afterwards use our prepared `requirements.txt` to get
 everything ready.
 
-```python
+```shell
 $ python3 -m venv my_agent_use_case_env`
 $ source my_agent_use_case_env/bin/activate
 $ pip install pip-tools
