@@ -23,6 +23,19 @@ If you are not using PyCharm, of course you can run the script files as usual.
 If you have any questions please get in touch with
 [the author](https://github.com/bangxiangyong).
 
+### Dependencies
+
+To install all dependencies in virtual environment based on Python version 3.8 first
+install `pip-tools` and afterwards use our prepared `requirements.txt` to get
+everything ready.
+
+```python
+$ python3 -m venv my_agent_use_case_env`
+$ source my_agent_use_case_env/bin/activate
+$ pip install pip-tools
+$ pip install -r requirements.txt
+```
+
 ### Scripts
 
 The interesting parts you find in the file
