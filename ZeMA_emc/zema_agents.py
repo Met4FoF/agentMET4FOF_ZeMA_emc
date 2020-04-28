@@ -1,5 +1,5 @@
 from agentMET4FOF.agents import AgentMET4FOF
-from examples.ZEMA_EMC.zema_feature_extract import FFT_BFC, Pearson_FeatureSelection
+from ZeMA_emc.zema_feature_extract import FFT_BFC, Pearson_FeatureSelection
 
 import numpy as np
 import time
