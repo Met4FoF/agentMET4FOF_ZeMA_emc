@@ -1,8 +1,8 @@
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-
-import matplotlib.pyplot as plt
 from scipy.stats import pearsonr
+
 
 class FFT_BFC():
     def __init__(self,perc_feat = 10):
@@ -360,4 +360,3 @@ class Pearson_FeatureSelection():
         ax1.axis('equal')
 
         return fig1
-

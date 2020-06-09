@@ -1,18 +1,20 @@
-from agentMET4FOF.agents import AgentNetwork, MonitorAgent, DataStreamAgent
-
-from ZeMA_emc.zema_datastream import ZEMA_DataStream
-from ZeMA_emc.zema_agents import TrainTestSplitAgent, FFT_BFCAgent, Pearson_FeatureSelectionAgent, LDA_Agent, Regression_Agent ,EvaluatorAgent
-import ZeMA_emc.zema_agents
-
 import numpy as np
+from agentMET4FOF.agents import AgentNetwork, DataStreamAgent, MonitorAgent
+
+from . import zema_agents, zema_datastream
+from .zema_agents import (EvaluatorAgent, FFT_BFCAgent, LDA_Agent,
+                          Pearson_FeatureSelectionAgent, Regression_Agent,
+                          TrainTestSplitAgent)
+from .zema_datastream import ZEMA_DataStream
+
 np.random.seed(100)
 
 
 def main():
     # start agent network server
     agentNetwork = AgentNetwork(
-        dashboard_modules=[ZeMA_emc.zema_datastream,
-                           ZeMA_emc.zema_agents], log_filename=False)
+        dashboard_modules=[zema_datastream,
+                           zema_agents], log_filename=False)
     # init agents by adding into the agent network
     datastream_agent = agentNetwork.add_agent(agentType=DataStreamAgent)
     train_test_split_agent = agentNetwork.add_agent(

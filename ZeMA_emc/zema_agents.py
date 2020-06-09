@@ -1,15 +1,16 @@
-from agentMET4FOF.agents import AgentMET4FOF
-from ZeMA_emc.zema_feature_extract import FFT_BFC, Pearson_FeatureSelection
-
-import numpy as np
 import time
 
+import numpy as np
+from agentMET4FOF.agents import AgentMET4FOF
 from matplotlib import pyplot as plt
-from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn import linear_model
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import train_test_split
+
+from .zema_feature_extract import FFT_BFC, Pearson_FeatureSelection
+
 
 class FFTAgent(AgentMET4FOF):
     def init_parameters(self, sampling_period=1):

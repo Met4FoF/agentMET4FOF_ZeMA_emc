@@ -1,12 +1,11 @@
+import os
 import sys
 
 import h5py
 import numpy as np
 import pandas as pd
 import requests
-
 from agentMET4FOF.streams import DataStreamMET4FOF
-import os
 
 
 class ZEMA_DataStream(DataStreamMET4FOF):
