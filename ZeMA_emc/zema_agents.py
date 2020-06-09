@@ -9,7 +9,7 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import train_test_split
 
-from .zema_feature_extract import FFT_BFC, Pearson_FeatureSelection
+from zema_feature_extract import FFT_BFC, Pearson_FeatureSelection
 
 
 class FFTAgent(AgentMET4FOF):
