@@ -32,8 +32,8 @@ everything ready.
 ```shell
 $ python3 -m venv my_agent_use_case_env`
 $ source my_agent_use_case_env/bin/activate
-$ pip install pip-tools
-$ pip install -r requirements.txt
+$ pip install --upgrade pip setuptools pip-tools
+$ pip-sync
 ```
 
 ### Scripts
