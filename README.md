@@ -29,11 +29,40 @@ To install all dependencies in virtual environment based on Python version 3.8 f
 install `pip-tools` and afterwards use our prepared `requirements.txt` to get
 everything ready.
 
+### Create a virtual environment on Windows
+
+In your Windows command prompt execute the following to set up a virtual environment
+in a folder of your choice.
+
 ```shell
-$ python3 -m venv my_agent_use_case_env`
+> cd /LOCAL/PATH/TO/ENVS
+> python -m venv my_agent_use_case_env
+> my_agent_use_case_env\Scripts\activate.bat
+(my_agent_use_case_env) > pip install --upgrade pip pip-tools numpy
+Collecting numpy
+...
+Successfully installed numpy-...
+(my_agent_use_case_env) > pip-sync
+Collecting agentMET4FOF
+...
+Successfully installed agentMET4FOF-... ...
+...
+```
+
+### Create a virtual environment on Mac and Linux
+
+In your terminal execute the following to set up a virtual environment
+in a folder of your choice.
+
+```shell
+$ python3.8 -m venv my_agent_use_case_env
 $ source my_agent_use_case_env/bin/activate
-$ pip install --upgrade pip setuptools pip-tools
+$ pip install --upgrade pip pip-tools numpy
 $ pip-sync
+Collecting agentMET4FOF
+...
+Successfully installed agentMET4FOF-... ...
+...
 ```
 
 ### Scripts
@@ -42,15 +71,29 @@ The interesting parts you find in the file
 
 - `main_zema_agents.py`
 
-### Note
+### Orphaned processes
 
-In the event of agents not terminating cleanly, run
+In the event of agents not terminating cleanly, you can end all Python processes
+running on your system (caution: the following commands affect **all** running Python
+ processes, not just those that emerged from the agents).
+
+#### Killing all Python processes in Windows
+
+In your Windows command prompt execute the following to terminate all python processes.
 
 ```shell
-taskkill /f /im python.exe /t
+> taskkill /f /im python.exe /t
+>
 ```
 
-in Windows Command Prompt to terminate all  background python processes.
+#### Killing all Python processes on Mac and Linux
+
+In your terminal execute the following to terminate all python processes.
+
+```shell
+$ pkill python
+$
+```
 
 ## References
 
