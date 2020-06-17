@@ -4,7 +4,7 @@
 #
 #    pip-compile
 #
-agentmet4fof==0.1.7       # via -r requirements.in
+agentmet4fof==0.1.8       # via -r requirements.in
 brotli==1.0.7             # via flask-compress
 click==7.1.2              # via flask
 cloudpickle==1.4.1        # via osbrain
@@ -16,7 +16,7 @@ dash-table==4.7.0         # via dash
 dash==1.12.0              # via agentmet4fof, dash-cytoscape
 dash_renderer==1.4.1      # via dash, dash-cytoscape
 decorator==4.4.2          # via networkx
-dill==0.3.1.1             # via multiprocess, osbrain
+dill==0.3.2               # via osbrain
 flask-compress==1.5.0     # via dash
 flask==1.1.2              # via dash, flask-compress
 future==0.18.2            # via dash
@@ -27,7 +27,6 @@ joblib==0.15.1            # via scikit-learn
 kiwisolver==1.2.0         # via matplotlib
 markupsafe==1.1.1         # via jinja2
 matplotlib==3.2.1         # via -r requirements.in, agentmet4fof
-multiprocess==0.70.9      # via agentmet4fof
 networkx==2.4             # via agentmet4fof
 numpy==1.18.5             # via -r requirements.in, agentmet4fof, h5py, matplotlib, pandas, scikit-learn, scipy
 osbrain==0.6.5            # via agentmet4fof
