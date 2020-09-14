@@ -35,9 +35,24 @@ class ZEMA_DataStream(DataStreamMET4FOF):
                         "\r[%s%s]" % ('=' * done, ' ' * (50 - done)))
                     sys.stdout.flush()
 
-    def __init__(self):
+    def __init__(self, select_sensors=[], asset_index=0, **kwargs):
 
-        self.url = "https://zenodo.org/record/1326278/files/Sensor_data_2kHz.h5"
+        super(ZEMA_DataStream, self).__init__(**kwargs)
+
+        #select certain sensors only
+        if len(select_sensors) == 0:
+            self.select_sensors = np.arange(11)
+        else:
+            self.select_sensors = select_sensors
+
+        if asset_index == 0:
+            url = "https://zenodo.org/record/2702226/files/axis3_2kHz.h5"
+        elif asset_index == 1:
+            url = "https://zenodo.org/record/2702226/files/axis5_2kHz.h5"
+        elif asset_index == 2:
+            url = "https://zenodo.org/record/2702226/files/axis7_2kHz.h5"
+
+        self.url = url
         self.path = os.path.join(os.path.dirname(__file__), "dataset")
 
         # Check if the file is existing already, if not download the file.
@@ -79,11 +94,19 @@ class ZEMA_DataStream(DataStreamMET4FOF):
         #prepare target var
         target=list(np.zeros(data_inputs_np.shape[0]))          # Making the target list which takes into account number of cycles, which-
         for i in range(data_inputs_np.shape[0]):                # goes from 0 to 100, and has number of elements same as number of cycles.
-            target[i]=(i/(data_inputs_np.shape[0]-1))*100
+            target[i]=(i/(data_inputs_np.shape[0]-1))
 
         target_matrix = pd.DataFrame(target)        # Transforming list "target" into data frame "target matrix"
         data_inputs_np = self.convert_SI(data_inputs_np)
-        self.set_data_source(x=data_inputs_np, y=target_matrix)
+
+        #apply filter to selected sensors only
+        self.set_data_source(x=data_inputs_np[:,:,self.select_sensors], y=target_matrix)
+        self.offset = np.array(self.offset)[self.select_sensors]
+        self.gain = np.array(self.gain)[self.select_sensors]
+        self.b = np.array(self.b)[self.select_sensors]
+        self.k = np.array(self.k)[self.select_sensors]
+        self.units = np.array(self.units)[self.select_sensors]
+        self.labels = np.array(self.labels)[self.select_sensors]
 
     def convert_SI(self, sensor_ADC):
         sensor_SI = sensor_ADC
