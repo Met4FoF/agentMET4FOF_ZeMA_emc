@@ -100,7 +100,7 @@ class ZEMA_DataStream(DataStreamMET4FOF):
         data_inputs_np = self.convert_SI(data_inputs_np)
 
         #apply filter to selected sensors only
-        self.set_data_source(x=data_inputs_np[:,:,self.select_sensors], y=target_matrix)
+        self.set_data_source(quantities=data_inputs_np[:,:,self.select_sensors], target=target_matrix)
         self.offset = np.array(self.offset)[self.select_sensors]
         self.gain = np.array(self.gain)[self.select_sensors]
         self.b = np.array(self.b)[self.select_sensors]
