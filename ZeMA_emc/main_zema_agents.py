@@ -1,11 +1,11 @@
 import numpy as np
 from agentMET4FOF.agents import AgentNetwork, DataStreamAgent, MonitorAgent
 
-from . import zema_agents, zema_datastream
-from .zema_agents import (EvaluatorAgent, FFT_BFCAgent, LDA_Agent,
+from ZeMA_emc import zema_agents, zema_datastream
+from ZeMA_emc.zema_agents import (EvaluatorAgent, FFT_BFCAgent, LDA_Agent,
                           Pearson_FeatureSelectionAgent, Regression_Agent,
                           TrainTestSplitAgent)
-from .zema_datastream import ZEMA_DataStream
+from ZeMA_emc.zema_datastream import ZEMA_DataStream
 
 np.random.seed(100)
 
