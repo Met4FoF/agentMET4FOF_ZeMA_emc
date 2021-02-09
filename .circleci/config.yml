@@ -16,16 +16,8 @@ executors:
     docker:
       - image: circleci/python:<< parameters.tag >>
 
-workflows:
-  # Create workflow for testing and deploying.
-  test:
-    jobs:
-      - test:
-          name: "test_python3.8"
-          tag: "3.8"
-          pyenv: "py38"
-
 jobs:
+
   # Define one 'test' job with parameters to deal with all desired cases.
   test:
     # Define all parameters, where 'tag' is used for the docker image and 'pyenv' is
