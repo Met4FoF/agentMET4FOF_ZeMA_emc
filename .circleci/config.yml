@@ -72,7 +72,7 @@ jobs:
       # Run tests with coverage report! We use pytest's test-runner.
       - run:
           name: Run agentMET4FOF tests
-          no_output_timeout: 20m
+          no_output_timeout: 60m
           command: |
             source << parameters.pyenv >>/bin/activate
             pytest -v --junitxml=test-results/pytest.xml --cov=. . | tee \
