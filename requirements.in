@@ -1,7 +1,8 @@
-agentMET4FOF
+agentMET4FOF==0.2.1
 numpy
 scikit-learn
 scipy
 matplotlib
 pandas
 h5py
+requests
