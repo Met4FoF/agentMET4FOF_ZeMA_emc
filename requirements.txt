@@ -4,7 +4,7 @@
 #
 #    pip-compile
 #
-agentmet4fof==0.1.8
+agentmet4fof==0.5.1
     # via -r requirements.in
 brotli==1.0.9
     # via flask-compress
