@@ -1,5 +1,3 @@
-[![CircleCI](https://circleci.com/gh/Met4FoF/agentMET4FOF_ZeMA_emc.svg?style=shield)](https://circleci.com/gh/Met4FoF/agentMET4FOF_ZeMA_emc)
-
 # Met4FoF use case of agent based condition monitoring
 
 This is supported by European Metrology Programme for Innovation and Research (EMPIR)
