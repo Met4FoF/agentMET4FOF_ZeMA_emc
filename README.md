@@ -25,7 +25,7 @@ If you have any questions please get in touch with
 
 ### Dependencies
 
-To install all dependencies in virtual environment based on Python version 3.8 first
+To install all dependencies in virtual environment based on Python version 3.9 first
 install `pip-tools` and afterwards use our prepared `requirements.txt` to get
 everything ready.
 
