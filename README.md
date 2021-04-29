@@ -71,30 +71,6 @@ The interesting parts you find in the file
 
 - `main_zema_agents.py`
 
-### Orphaned processes
-
-In the event of agents not terminating cleanly, you can end all Python processes
-running on your system (caution: the following commands affect **all** running Python
- processes, not just those that emerged from the agents).
-
-#### Killing all Python processes in Windows
-
-In your Windows command prompt execute the following to terminate all python processes.
-
-```shell
-> taskkill /f /im python.exe /t
->
-```
-
-#### Killing all Python processes on Mac and Linux
-
-In your terminal execute the following to terminate all python processes.
-
-```shell
-$ pkill python
-$
-```
-
 ## References
 
 For details about the agents refer to the
